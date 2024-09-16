@@ -201,10 +201,10 @@ def save_model(model, args, filename="final_model.pth"):
         "parameters" : model.module.state_dict() if args.multi_gpu else model.state_dict() #If multi-GPU, undo DDP wrapper
     }, final_filename)
 
-def load_model(model, model_path):
+def load_model(model, model_path, device):
     if os.path.exists(model_path):
         print(f"Loading checkpoint from '{os.path.abspath(model_path)}' ...", end=" ")
-        model_dict = torch.load(model_path)
+        model_dict = torch.load(model_path, map_location=device)
         model.load_state_dict(model_dict["parameters"])
         print("done!")
         return model
@@ -220,11 +220,11 @@ def save_checkpoint(epoch, model, optimiser, scheduler, args, filename = "checkp
         "scheduler" : scheduler.state_dict()
     }, checkpoint_filename)
 
-def load_checkpoint(model, optimiser, scheduler, checkpoint_path):
+def load_checkpoint(model, optimiser, scheduler, checkpoint_path, device):
     # Check if the save file exists
     if os.path.exists(checkpoint_path):
         print(f"Loading checkpoint from '{os.path.abspath(checkpoint_path)}' ...", end=" ")
-        checkpoint = torch.load(checkpoint_path)
+        checkpoint = torch.load(checkpoint_path, map_location=device)
         model.load_state_dict(checkpoint["parameters"])
         optimiser.load_state_dict(checkpoint["optimiser"])
         scheduler.load_state_dict(checkpoint["scheduler"])

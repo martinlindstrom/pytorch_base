@@ -71,8 +71,15 @@ def main(args):
     else: #Handle regular device setup
         device = torch.device("cuda:0") if args.single_gpu else torch.device("cpu")
 
-    # Set up model, optimiser, scheduler, dataset, loss
+    # Set up model
     model = get_model(args)
+    model.to(device)
+    # DDP-ify model if needed
+    if args.multi_gpu:
+        model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        model = DistributedDataParallel(model, device_ids=[rank])
+
+    # Set up optimiser, scheduler, dataset, loss
     optimiser = get_optimiser(model, args)
     scheduler = get_scheduler(optimiser, args)
     trainloader, trainsampler, valloader, valsampler, testloader, testsampler = get_dataloaders_samplers(args)
@@ -80,14 +87,9 @@ def main(args):
 
     # Resume from checkpoint if this is desired
     if args.resume: #load checkpoint which was aborted from
-        model, optimiser, scheduler, start_epoch = load_checkpoint(model, optimiser, scheduler, args.resume)
+        model, optimiser, scheduler, start_epoch = load_checkpoint(model, optimiser, scheduler, args.resume, device)
     else: #default values: anything non-randomised
         start_epoch = 0
-
-    # DDP-ify model if needed
-    if args.multi_gpu:
-        model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        model = DistributedDataParallel(model, device_ids=[rank])
 
     # Set up checkpointing and logging if desired
     # Throws an exception if the specified checkpoint dir already exists; 
