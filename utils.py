@@ -5,7 +5,6 @@ from torch.optim import SGD
 from torch.optim.lr_scheduler import CosineAnnealingLR, ConstantLR, SequentialLR
 from torch.utils.data import RandomSampler, SequentialSampler, DistributedSampler, DataLoader
 import torch.distributed as dist
-from torch.utils.tensorboard import SummaryWriter
 
 # NumPy etc.
 import numpy as np
