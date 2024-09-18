@@ -312,7 +312,7 @@ def evaluate(epoch, dataloader, sampler, model, loss_fcn, device, args):
 
     if args.multi_gpu:
         dist.all_reduce(loss, op=dist.ReduceOp.SUM)
-        dist.all_reduce(topk_accuracy, op=dist.ReduceOp.SUM)
+        dist.all_reduce(topk_correct, op=dist.ReduceOp.SUM)
         
     # Post-action: normalise correctly
     loss = loss/len(dataloader.dataset)
