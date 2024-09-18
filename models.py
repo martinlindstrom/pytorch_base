@@ -2,7 +2,7 @@
 from torch import nn
 
 # Torchvision imports
-from torchvision.models import resnet50, resnet18
+from torchvision.models import resnet50, resnet34, resnet18
 
 
 class ResNet18(nn.Module):
@@ -13,6 +13,20 @@ class ResNet18(nn.Module):
         super(ResNet18, self).__init__()
         self.out_dim = out_dim
         self.net = resnet18()
+        self.net.fc = nn.Linear(in_features=512, out_features=out_dim, bias=True)
+
+    def forward(self, x):
+        out = self.net(x)
+        return out
+    
+class ResNet34(nn.Module):
+    """
+    ResNet34 adapted to variable output dimension.
+    """
+    def __init__(self, out_dim):
+        super(ResNet34, self).__init__()
+        self.out_dim = out_dim
+        self.net = resnet34()
         self.net.fc = nn.Linear(in_features=512, out_features=out_dim, bias=True)
 
     def forward(self, x):
