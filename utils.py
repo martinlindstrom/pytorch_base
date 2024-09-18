@@ -16,7 +16,7 @@ import argparse
 import os
 
 # Project imports
-from models import SmallNetwork, ResNet18, ResNet50
+from models import SmallNetwork, ResNet18, ResNet34, ResNet50
 from datasets import get_MNIST, get_CIFAR10, get_CIFAR100, get_imagenet
 
 class DummyDataset(torch.utils.data.Dataset):
@@ -67,12 +67,12 @@ For single-GPU OR CPU-only operations, run with the usual 'python3' command.\n==
                         metavar='WD', help='weight decay (default: 5e-4)')
     arch_and_training.add_argument('-s', '--scheduler', default="cosine_no_restart", type=str, metavar="SCHED",
                         help="learning rate scheduler (default: cosine_no_restart)")
-    arch_and_training.add_argument('--warmup_epochs', default=0, type=int, metavar="WARMUP",
-                        help="warmup epochs before decreasing learning according to scheduler")
+    arch_and_training.add_argument('--warmup-epochs', default=0, type=int, metavar="WARMUP",
+                        help="warmup epochs before decreasing learning according to scheduler (default: 0)")
     arch_and_training.add_argument('-l', '--loss-function', default="crossentropy", type=str, metavar="LOSS",
                         help="loss function (default: crossentropy)")
     arch_and_training.add_argument('-k', '--topk', default=[1,5], type=list, metavar="TOPK",
-                        help="top-k to track (default: [1,5])")
+                        help="top-k accuracies to track (default: [1,5])")
     
     # Checkpointing and resuming
     checkpointing = parser.add_argument_group(title="Checkpointing and Resuming", description="Checkpointing and resuming paths and frequencies")
@@ -181,6 +181,8 @@ def get_model(args):
         return SmallNetwork(out_dim=args.out_dim)
     elif args.arch == "resnet18":
         return ResNet18(out_dim=args.out_dim)
+    elif args.arch == "resnet34":
+        return ResNet34(out_dim=args.out_dim)
     elif args.arch == "resnet50":
         return ResNet50(out_dim=args.out_dim)
     else:
@@ -307,14 +309,14 @@ def evaluate(epoch, dataloader, sampler, model, loss_fcn, device, args):
             loss += loss_fcn(out, y)
             # Decode
             topk_correct += batch_topk(out, y, args.topk)
+
+    if args.multi_gpu:
+        dist.all_reduce(loss, op=dist.ReduceOp.SUM)
+        dist.all_reduce(topk_accuracy, op=dist.ReduceOp.SUM)
         
     # Post-action: normalise correctly
     loss = loss/len(dataloader.dataset)
     topk_accuracy = topk_correct/len(dataloader.dataset)
-
-    if args.multi_gpu:
-        dist.all_reduce(loss, op=dist.ReduceOp.AVG)
-        dist.all_reduce(topk_accuracy, op=dist.ReduceOp.AVG)
 
     return loss, topk_accuracy
 
