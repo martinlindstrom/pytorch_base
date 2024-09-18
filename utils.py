@@ -16,6 +16,8 @@ import argparse
 import os
 
 # Project imports
+from models import SmallNetwork, ResNet18, ResNet50
+from datasets import get_MNIST, get_CIFAR10, get_CIFAR100, get_imagenet
 
 class DummyDataset(torch.utils.data.Dataset):
     def __init__(self, size):
@@ -41,13 +43,15 @@ For single-GPU OR CPU-only operations, run with the usual 'python3' command.\n==
                         help='path to dataset (default: not specified, which works with dummy dataset)')
     dataloading.add_argument('--dataset', metavar='DATASET', type=str, default="dummy",
                         help='name of dataset to load (default: dummy)')
-    dataloading.add_argument('--loader-workers', default=4, type=int, metavar='LOADERS',
-                        help='number of data loading workers (default: 4)')
+    dataloading.add_argument('--loader-workers', default=10, type=int, metavar='LOADERS',
+                        help='number of data loading workers (default: 10)')
     
     # Architecture and training/eval parameters
     arch_and_training = parser.add_argument_group(title="Architecture and Trainining/Eval", description="Architecture and training arguments")
     arch_and_training.add_argument('-a', '--arch', metavar='ARCHITECHTURE', default='dummy',
                         help='model architecture (default: dummy)')
+    arch_and_training.add_argument('-d', '--out-dim', default=10, type=int, metavar='OUTDIM',
+                        help='output dimension of the network (default: 10)')
     arch_and_training.add_argument('-e', '--epochs', default=200, type=int, metavar='EP',
                         help='number of total epochs to run (default: 200)')
     arch_and_training.add_argument('-b', '--batch-size', default=256, type=int, metavar='BATCHSIZE',
@@ -127,6 +131,14 @@ def do_logging(logger, epoch, loss, accs, split, topk):
 def get_dataset(args):
     if args.dataset == "dummy":
         return DummyDataset(size = 5000), DummyDataset(size = 1000), DummyDataset(size = 1000)
+    elif args.dataset == "mnist":
+        return get_MNIST(args, valsplit=0.1)
+    elif args.dataset == "cifar10":
+        return get_CIFAR10(args, valsplit=0.1)
+    elif args.dataset == "cifar100":
+        return get_CIFAR100(args, valsplit=0.1)
+    elif args.dataset == "imagenet":
+        return get_imagenet(args, valsplit=0.1)
     else:
         raise NotImplementedError(f"The dataset '{args.dataset}' is not implemented.")
     
@@ -164,7 +176,13 @@ def get_dataloaders_samplers(args):
 
 def get_model(args):
     if args.arch == "dummy":
-        return nn.Linear(20,10)
+        return nn.Linear(20,args.out_dim)
+    elif args.arch == "small_network":
+        return SmallNetwork(out_dim=args.out_dim)
+    elif args.arch == "resnet18":
+        return ResNet18(out_dim=args.out_dim)
+    elif args.arch == "resnet50":
+        return ResNet50(out_dim=args.out_dim)
     else:
         raise NotImplementedError(f"The model '{args.arch}' is not implemented.")
 
