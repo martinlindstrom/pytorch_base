@@ -63,9 +63,9 @@ def get_CIFAR10(args, valsplit=0.1):
     # Define standard augmentations
     train_augmentations = v2.Compose([
         v2.ToImage(),
-        v2.RandomRotation(15),
-        v2.RandomResizedCrop(32),
+        v2.RandomCrop(size=32, padding=4),
         v2.RandomHorizontalFlip(0.5),
+        v2.RandomRotation(15),
         v2.ToDtype(torch.float32, scale=True),
         v2.Normalize(mean=cifar10_mean, std=cifar10_std)
     ])
@@ -76,7 +76,7 @@ def get_CIFAR10(args, valsplit=0.1):
     ])
     # Import the data
     train_dataset = datasets.CIFAR10(args.data_path, train=True, download=False, transform=None) #IMPORTANT; add different transforms to train/val later
-    test_dataset = datasets.CIFAR10(args.data_path, train=True, download=False, transforms=test_augmentations)
+    test_dataset = datasets.CIFAR10(args.data_path, train=False, download=False, transform=test_augmentations)
     # Get random train/val splits with correct augmentations
     train_dataset, val_dataset = get_train_val_splits(train_dataset, valsplit, train_augmentations, test_augmentations)
     # Return
@@ -102,7 +102,7 @@ def get_CIFAR100(args, valsplit=0.1):
     ])
     # Import the data
     train_dataset = datasets.CIFAR10(args.data_path, train=True, download=False, transform=None) #IMPORTANT; add different transforms to train/val later
-    test_dataset = datasets.CIFAR10(args.data_path, train=True, download=False, transforms=test_augmentations)
+    test_dataset = datasets.CIFAR10(args.data_path, train=False, download=False, transform=test_augmentations)
     # Get random train/val splits with correct augmentations
     train_dataset, val_dataset = get_train_val_splits(train_dataset, valsplit, train_augmentations, test_augmentations)
     # Return
