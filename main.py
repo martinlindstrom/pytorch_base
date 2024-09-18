@@ -73,11 +73,13 @@ def main(args):
 
     # Set up model
     model = get_model(args)
-    model.to(device)
     # DDP-ify model if needed
     if args.multi_gpu:
         model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        model.to(device)
         model = DistributedDataParallel(model, device_ids=[rank])
+    else:
+        model.to(device)
 
     # Set up optimiser, scheduler, dataset, loss
     optimiser = get_optimiser(model, args)
@@ -94,10 +96,10 @@ def main(args):
     # Set up checkpointing and logging if desired
     # Throws an exception if the specified checkpoint dir already exists; 
     # this avoids overwriting past logs/checkpoints
-    set_up_savedir(args)
     # Only do logging if checkpoint dir is specified
     # Evals are always printed no matter what
     if args.checkpoint:
+        set_up_savedir(args)
         if args.multi_gpu:
             if rank==0:
                 logger = SummaryWriter(args.checkpoint, filename_suffix=".log")
