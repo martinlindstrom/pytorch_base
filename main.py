@@ -99,11 +99,12 @@ def main(args):
     # Only do logging if checkpoint dir is specified
     # Evals are always printed no matter what
     if args.checkpoint:
-        set_up_savedir(args)
         if args.multi_gpu:
             if rank==0:
+                set_up_savedir(args)
                 logger = SummaryWriter(args.checkpoint, filename_suffix=".log")
         else:
+            set_up_savedir(args)
             logger = SummaryWriter(args.checkpoint, filename_suffix=".log")
     else:
         logger = None
@@ -199,11 +200,12 @@ def main(args):
             save_model(model, args)
 
     # Close the logger
-    if logger:
-        if args.multi_gpu:
-            if rank==0:
+    if args.multi_gpu:
+        if rank==0:
+            if logger:
                 logger.close()
-        else:
+    else:
+        if logger:
             logger.close()
 
 if __name__ == "__main__":

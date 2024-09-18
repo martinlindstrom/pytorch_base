@@ -162,7 +162,7 @@ def get_dataloaders_samplers(args):
         # Also use pin_memory for better performance
         trainloader = DataLoader(trainset, sampler=trainsampler, batch_size=int(args.batch_size/dist.get_world_size()), num_workers=args.loader_workers, pin_memory=True)
         valloader = DataLoader(valset, sampler=valsampler, batch_size=int(args.batch_size/dist.get_world_size()), num_workers=args.loader_workers, pin_memory=True)
-        testloader = DataLoader(testset, sampler=trainsampler, batch_size=int(args.batch_size/dist.get_world_size()), num_workers=args.loader_workers, pin_memory=True)
+        testloader = DataLoader(testset, sampler=testsampler, batch_size=int(args.batch_size/dist.get_world_size()), num_workers=args.loader_workers, pin_memory=True)
     elif args.single_gpu:
         # Pin memory for better performance
         trainloader = DataLoader(trainset, sampler=trainsampler, batch_size=args.batch_size, num_workers=args.loader_workers, pin_memory=True)
@@ -274,16 +274,16 @@ def run_epoch(epoch, dataloader, sampler, model, optimiser, scheduler, loss_fcn,
     # Post-action
     scheduler.step()
 
-def batch_topk(out, y, topk):
+def batch_topk(out, y, topk, device):
     # Returns the top-k correct for all specified values in 'topk'
     with torch.no_grad():
-        maxk = torch.max(torch.tensor(topk))
+        maxk = torch.max(torch.tensor(topk, device=device))
         batch_size = out.shape[0]
 
         _, kpred = out.topk(k=maxk, dim=1, largest=True, sorted=True) #(batch_size x maxk) shape
         correct = kpred.eq(y.view(-1, 1).expand_as(kpred)) #(batch_size x maxk) shape
 
-        res = torch.zeros_like(torch.tensor(topk))
+        res = torch.zeros_like(torch.tensor(topk), device=device)
         for i in range(len(topk)):
             k = topk[i]
             correct_k = correct[:,:k].view(-1).sum(0) # (batch_size) shape
@@ -291,12 +291,15 @@ def batch_topk(out, y, topk):
         return res
 
 def evaluate(epoch, dataloader, sampler, model, loss_fcn, device, args):
+    #print(f"Evaluating -- len: {len(dataloader.dataset)}; len samp.ds: {len(sampler.dataset)}; len samp: {len(sampler)}")
+    #print(f"rank{device}; dataloader {dataloader}")
+    #print(f"rank{device}; dataset {dataloader.dataset}")
     # Setup
     if args.multi_gpu:
         sampler.set_epoch(epoch)
     model.eval()
-    loss = 0.0
-    topk_correct = torch.zeros_like(torch.tensor(args.topk)) #(args.topk,) shape
+    loss = torch.tensor(0., device=device)
+    topk_correct = torch.zeros_like(torch.tensor(args.topk), device=device) #(args.topk,) shape
     
     # Loop over batches
     with torch.no_grad():
@@ -308,7 +311,7 @@ def evaluate(epoch, dataloader, sampler, model, loss_fcn, device, args):
             # Track loss
             loss += loss_fcn(out, y)
             # Decode
-            topk_correct += batch_topk(out, y, args.topk)
+            topk_correct += batch_topk(out, y, args.topk, device)
 
     if args.multi_gpu:
         dist.all_reduce(loss, op=dist.ReduceOp.SUM)
