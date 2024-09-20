@@ -22,16 +22,8 @@ from utils import (parse_arguments, set_up_savedir, do_logging,
 
 """
 TODO:
-- Implement the rest of the things
-- Test on CPU
-    X Saving and loading
-    X Re-do logic for checkpointing: if specified, checkpoint; if not, don't
-     XTraining/evalaution loop
-    Model class with top-k evaluation; specify in arguments
-    Final logging and save
-- Test on one/multi-GPU (for crashes)
-- Plan for more major testing on single GPU with CIFAR
-
+- Investigate TF32 instead of FP32
+- Investigate A100/A40 epoch stats for different number of GPUs
 """
 
 def setup(backend="nccl", verbose=True):
