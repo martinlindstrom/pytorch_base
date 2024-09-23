@@ -291,9 +291,6 @@ def batch_topk(out, y, topk, device):
         return res
 
 def evaluate(epoch, dataloader, sampler, model, loss_fcn, device, args):
-    #print(f"Evaluating -- len: {len(dataloader.dataset)}; len samp.ds: {len(sampler.dataset)}; len samp: {len(sampler)}")
-    #print(f"rank{device}; dataloader {dataloader}")
-    #print(f"rank{device}; dataset {dataloader.dataset}")
     # Setup
     if args.multi_gpu:
         sampler.set_epoch(epoch)
