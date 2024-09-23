@@ -84,13 +84,25 @@ def main(args):
             print(f"=============================================\nEvaluating\n=============================================")
     else:
         print(f"=============================================\nEvaluating\n=============================================")
+    # Do timing
+    if args.multi_gpu:
+        if rank == 0:
+            print(f"Performing evaluation -- ", end="")
+            eval_start_time = datetime.now()
+        else:
+            print(f"Performing evaluation -- ", end="")
+            eval_start_time = datetime.now()
     test_loss, test_acc = evaluate(args.epochs, testloader, testsampler, model, loss_fcn, device, args)
     # Print
     logger = None
     if args.multi_gpu:
         if rank==0:
+            eval_time = datetime.now()-eval_start_time
+            print(str(eval_time).split(".")[0], "s")
             do_logging(logger, args.epochs, test_loss, test_acc, "Test", args.topk)
     else:
+        eval_time = datetime.now()-eval_start_time
+        print(str(eval_time).split(".")[0], "s")
         do_logging(logger, args.epochs, test_loss, test_acc, "Test", args.topk)
 
 if __name__ == "__main__":
