@@ -89,9 +89,10 @@ def main(args):
         if rank == 0:
             print(f"Performing evaluation -- ", end="")
             eval_start_time = datetime.now()
-        else:
-            print(f"Performing evaluation -- ", end="")
-            eval_start_time = datetime.now()
+    else:
+        print(f"Performing evaluation -- ", end="")
+        eval_start_time = datetime.now()
+    # Eval
     test_loss, test_acc = evaluate(args.epochs, testloader, testsampler, model, loss_fcn, device, args)
     # Print
     logger = None
