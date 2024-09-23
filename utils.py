@@ -291,6 +291,9 @@ def batch_topk(out, y, topk, device):
         return res
 
 def evaluate(epoch, dataloader, sampler, model, loss_fcn, device, args):
+    print(f"{device} - dataset len:{len(dataloader.dataset)}")
+    print(f"{device} - batch size:{dataloader.batch_size}")
+    print(f"{device} - sampler len:{len(sampler)}")
     # Setup
     if args.multi_gpu:
         sampler.set_epoch(epoch)
@@ -308,15 +311,23 @@ def evaluate(epoch, dataloader, sampler, model, loss_fcn, device, args):
             # Track loss
             loss += loss_fcn(out, y)
             # Decode
-            topk_correct += batch_topk(out, y, args.topk, device)
-
+            temp_correct = batch_topk(out, y, args.topk, device)
+            print(f"{device}:{batch} - accs:{temp_correct}")
+            topk_correct += temp_correct
+    print("\n============After loop===========\n\n")
+    print(f"{device} - {topk_correct}")
     if args.multi_gpu:
         dist.all_reduce(loss, op=dist.ReduceOp.SUM)
         dist.all_reduce(topk_correct, op=dist.ReduceOp.SUM)
+    print("\n============After reduce===========\n\n")
+    print(f"{device} - {topk_correct}")
         
     # Post-action: normalise correctly
     loss = loss/len(dataloader.dataset)
     topk_accuracy = topk_correct/len(dataloader.dataset)
+
+    print("\n============After normalisation===========\n\n")
+    print(f"{device} - {topk_accuracy}")
 
     return loss, topk_accuracy
 
