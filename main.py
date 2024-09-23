@@ -80,8 +80,8 @@ def main(args):
     loss_fcn = get_loss(args)
 
     # Resume from checkpoint if this is desired
-    if args.resume: #load checkpoint which was aborted from
-        model, optimiser, scheduler, start_epoch = load_checkpoint(model, optimiser, scheduler, args.resume, device)
+    if args.resume_evaluate_model: #load checkpoint which was aborted from
+        model, optimiser, scheduler, start_epoch = load_checkpoint(model, optimiser, scheduler, args.resume_evaluate_model, device)
     else: #default values: anything non-randomised
         start_epoch = 0
 

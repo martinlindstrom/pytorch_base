@@ -76,8 +76,8 @@ For single-GPU OR CPU-only operations, run with the usual 'python3' command.\n==
     
     # Checkpointing and resuming
     checkpointing = parser.add_argument_group(title="Checkpointing and Resuming", description="Checkpointing and resuming paths and frequencies")
-    checkpointing.add_argument('--resume', default=False, type=str, metavar='RESUMEPATH',
-                        help='path to latest checkpoint (default: False)')
+    checkpointing.add_argument('--resume-evaluate-model', default=False, type=str, metavar='MODELPATH',
+                        help='path to model to load (default: False)')
     checkpointing.add_argument('-f', '--checkpoint-freq', metavar='FREQ', default=5, type=int,
                         help='eval and checkpoint every FREQ training epochs (default: 5)')
     checkpointing.add_argument('-c','--checkpoint', default="", type=str, metavar="CKPTPATH",
