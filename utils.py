@@ -128,20 +128,42 @@ def do_logging(logger, epoch, loss, accs, split, topk):
         for i in range(len(topk)):
             logger.add_scalar(f"{split}/Top{topk[i]}-Acc", accs[i], epoch)
 
-def get_dataset(args):
+def get_dataset(args, testset_only=False):
     if args.dataset == "dummy":
         return DummyDataset(size = 5000), DummyDataset(size = 1000), DummyDataset(size = 1000)
     elif args.dataset == "mnist":
-        return get_MNIST(args, valsplit=0.1)
+        return get_MNIST(args, testset_only, valsplit=0.1)
     elif args.dataset == "cifar10":
-        return get_CIFAR10(args, valsplit=0.1)
+        return get_CIFAR10(args, testset_only, valsplit=0.1)
     elif args.dataset == "cifar100":
-        return get_CIFAR100(args, valsplit=0.1)
+        return get_CIFAR100(args, testset_only, valsplit=0.1)
     elif args.dataset == "imagenet":
-        return get_imagenet(args, valsplit=0.1)
+        return get_imagenet(args, testset_only, valsplit=0.1)
     else:
         raise NotImplementedError(f"The dataset '{args.dataset}' is not implemented.")
     
+def get_testloader_sampler(args):
+    # Get ONLY testloader. Useful in, for example, evaluating trained models
+    _, _, testset = get_dataset(args, testset_only=True)
+    # Create sampler
+    if args.multi_gpu: #need a distributed sampler. No need to shuffle validation/test sets
+        testsampler = DistributedSampler(testset, shuffle=False, drop_last=False)
+    else: #setting shuffle=true is the typical solution (and is equivalent), but to make the code more modular, instantiate a random sampler manually
+        testsampler = SequentialSampler(testset)
+        
+    # Now create the loaders
+    # There are general data loading optimisations which are done, see https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html 
+    if args.multi_gpu:
+        # Correctly scale batch size per loader
+        # Also use pin_memory for better performance
+        testloader = DataLoader(testset, sampler=testsampler, batch_size=int(args.batch_size/dist.get_world_size()), num_workers=args.loader_workers, pin_memory=True)
+    elif args.single_gpu:
+        # Pin memory for better performance
+        testloader = DataLoader(testset, sampler=testsampler, batch_size=args.batch_size, num_workers=args.loader_workers, pin_memory=True)
+    else: #Then args.cpu_only:
+        testloader = DataLoader(testset, sampler=testsampler, batch_size=args.batch_size, num_workers=args.loader_workers)
+    return testloader, testsampler
+
 def get_dataloaders_samplers(args):
     # Get train, val, and test sets
     trainset, valset, testset = get_dataset(args)

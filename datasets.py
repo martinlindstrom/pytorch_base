@@ -34,9 +34,7 @@ def get_train_val_splits(full_dataset, val_split, train_transform, val_transform
     val_set = SubsetWithTransform(val_subset, val_transform)
     return train_set, val_set
 
-
-
-def get_MNIST(args, valsplit=0.1):
+def get_MNIST(args, testset_only, valsplit=0.1):
     # Define augmentations
     train_augmentations = v2.Compose([
         v2.ToImage(),
@@ -48,15 +46,20 @@ def get_MNIST(args, valsplit=0.1):
         v2.ToImage(),
         v2.ToDtype(torch.float32, scale=True)
     ])
-    # Import the data
-    train_dataset = datasets.MNIST(args.data_path, train=True, download=False, transform=None) #IMPORTANT; add different transforms to train/val later
-    test_dataset = datasets.MNIST(args.data_path, train=False, download=False, transform=test_augmentations)
-    # Get random train/val splits with correct augmentations
-    train_dataset, val_dataset = get_train_val_splits(train_dataset, valsplit, train_augmentations, test_augmentations)
-    # Return
-    return train_dataset, val_dataset, test_dataset
+    if testset_only:
+        # Return only the testset
+        test_dataset = datasets.MNIST(args.data_path, train=False, download=False, transform=test_augmentations)
+        return None, None, test_dataset
+    else:
+        # Return everything
+        train_dataset = datasets.MNIST(args.data_path, train=True, download=False, transform=None) #IMPORTANT; add different transforms to train/val later
+        test_dataset = datasets.MNIST(args.data_path, train=False, download=False, transform=test_augmentations)
+        # Get random train/val splits with correct augmentations
+        train_dataset, val_dataset = get_train_val_splits(train_dataset, valsplit, train_augmentations, test_augmentations)
+        # Return
+        return train_dataset, val_dataset, test_dataset
 
-def get_CIFAR10(args, valsplit=0.1):
+def get_CIFAR10(args, testset_only, valsplit=0.1):
     # Pre-calculated means and stds
     cifar10_mean = [0.49139965, 0.48215827, 0.44653103]
     cifar10_std = [0.24703230, 0.24348512, 0.26158816]
@@ -74,15 +77,20 @@ def get_CIFAR10(args, valsplit=0.1):
         v2.ToDtype(torch.float32, scale=True),
         v2.Normalize(mean=cifar10_mean, std=cifar10_std)
     ])
-    # Import the data
-    train_dataset = datasets.CIFAR10(args.data_path, train=True, download=False, transform=None) #IMPORTANT; add different transforms to train/val later
-    test_dataset = datasets.CIFAR10(args.data_path, train=False, download=False, transform=test_augmentations)
-    # Get random train/val splits with correct augmentations
-    train_dataset, val_dataset = get_train_val_splits(train_dataset, valsplit, train_augmentations, test_augmentations)
-    # Return
-    return train_dataset, val_dataset, test_dataset
+    if testset_only:
+        # Return only the restset 
+        test_dataset = datasets.CIFAR10(args.data_path, train=False, download=False, transform=test_augmentations)
+        None, None, test_dataset
+    else:
+        # Return everything
+        train_dataset = datasets.CIFAR10(args.data_path, train=True, download=False, transform=None) #IMPORTANT; add different transforms to train/val later
+        test_dataset = datasets.CIFAR10(args.data_path, train=False, download=False, transform=test_augmentations)
+        # Get random train/val splits with correct augmentations
+        train_dataset, val_dataset = get_train_val_splits(train_dataset, valsplit, train_augmentations, test_augmentations)
+        # Return
+        return train_dataset, val_dataset, test_dataset
 
-def get_CIFAR100(args, valsplit=0.1):
+def get_CIFAR100(args, testset_only, valsplit=0.1):
     # Pre-calculated means and stds
     cifar100_mean = [0.50707483, 0.48654887, 0.44091749]
     cifar100_std = [0.26733416, 0.25643855, 0.27615049]
@@ -100,15 +108,20 @@ def get_CIFAR100(args, valsplit=0.1):
         v2.ToDtype(torch.float32, scale=True),
         v2.Normalize(mean=cifar100_mean, std=cifar100_std)
     ])
-    # Import the data
-    train_dataset = datasets.CIFAR10(args.data_path, train=True, download=False, transform=None) #IMPORTANT; add different transforms to train/val later
-    test_dataset = datasets.CIFAR10(args.data_path, train=False, download=False, transform=test_augmentations)
-    # Get random train/val splits with correct augmentations
-    train_dataset, val_dataset = get_train_val_splits(train_dataset, valsplit, train_augmentations, test_augmentations)
-    # Return
-    return train_dataset, val_dataset, test_dataset
+    if testset_only:
+        # Return only the testset
+        test_dataset = datasets.CIFAR10(args.data_path, train=False, download=False, transform=test_augmentations)
+        return None, None, test_dataset
+    else:
+        # Return everything
+        train_dataset = datasets.CIFAR10(args.data_path, train=True, download=False, transform=None) #IMPORTANT; add different transforms to train/val later
+        test_dataset = datasets.CIFAR10(args.data_path, train=False, download=False, transform=test_augmentations)
+        # Get random train/val splits with correct augmentations
+        train_dataset, val_dataset = get_train_val_splits(train_dataset, valsplit, train_augmentations, test_augmentations)
+        # Return
+        return train_dataset, val_dataset, test_dataset
 
-def get_imagenet(args, valsplit=0.1):
+def get_imagenet(args, testset_only, valsplit=0.1):
     # Inspiration taken from PyTorch example here: 
     # https://github.com/pytorch/examples/blob/a308b4e97459b07c1b356642b2a8b4206c6d6de1/imagenet/main.py#L236
     imagenet_mean = [0.485, 0.456, 0.406]
@@ -128,9 +141,14 @@ def get_imagenet(args, valsplit=0.1):
         v2.ToDtype(torch.float32, scale=True),
         v2.Normalize(mean=imagenet_mean, std=imagenet_std)
     ])
-    # Import the data
-    train_dataset = datasets.ImageNet(args.data_path, split="train", transform=None)
-    test_dataset = datasets.ImageNet(args.data_path, split="val", transform=test_augmentations)
-    # Get random train/val splits with correct augmentations
-    train_dataset, val_dataset = get_train_val_splits(train_dataset, valsplit, train_augmentations, test_augmentations)
-    return train_dataset, val_dataset, test_dataset
+    if testset_only:
+        # Return only the testset
+        test_dataset = datasets.ImageNet(args.data_path, split="val", transform=test_augmentations)
+        return None, None, test_dataset
+    else:
+        # Return everything
+        train_dataset = datasets.ImageNet(args.data_path, split="train", transform=None)
+        test_dataset = datasets.ImageNet(args.data_path, split="val", transform=test_augmentations)
+        # Get random train/val splits with correct augmentations
+        train_dataset, val_dataset = get_train_val_splits(train_dataset, valsplit, train_augmentations, test_augmentations)
+        return train_dataset, val_dataset, test_dataset
