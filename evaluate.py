@@ -16,7 +16,7 @@ import os
 
 # Project imports
 from utils import (parse_arguments, do_logging,
-    get_model, get_optimiser, get_scheduler, get_loss, get_dataloaders_samplers,
+    get_model, get_optimiser, get_scheduler, get_loss, get_testloader_sampler,
     load_model, 
     evaluate)
 
@@ -57,8 +57,19 @@ def main(args):
     else: #Handle regular device setup
         device = torch.device("cuda:0") if args.single_gpu else torch.device("cpu")
 
-    # Set up model
+    # Set up model, optimiser, scheduler, dataset, loss
     model = get_model(args)
+    optimiser = get_optimiser(model, args)
+    scheduler = get_scheduler(optimiser, args)
+    testloader, testsampler = get_testloader_sampler(args)
+    loss_fcn = get_loss(args)
+
+    # Load model to evaluate
+    if args.resume_evaluate_model: #load checkpoint which was aborted from
+        model = load_model(model, args.resume_evaluate_model, device)
+    else: # Throw error: this is the only purpose of this script
+        raise ValueError(f"Did not get model to evaluate.")
+    
     # DDP-ify model if needed
     if args.multi_gpu:
         model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -66,18 +77,6 @@ def main(args):
         model = DistributedDataParallel(model, device_ids=[rank])
     else:
         model.to(device)
-
-    # Set up optimiser, scheduler, dataset, loss
-    optimiser = get_optimiser(model, args)
-    scheduler = get_scheduler(optimiser, args)
-    trainloader, trainsampler, valloader, valsampler, testloader, testsampler = get_dataloaders_samplers(args)
-    loss_fcn = get_loss(args)
-
-    # Load model to evaluate
-    if args.resume_evaluate_model: #load checkpoint which was aborted from
-        model = load_model(model, optimiser, scheduler, args.resume_evaluate_model, device)
-    else: # Throw error: this is the only purpose of this script
-        raise ValueError(f"Did not get model to evaluate.")
 
     # Evaluate
     if args.multi_gpu:
