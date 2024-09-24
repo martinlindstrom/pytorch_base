@@ -72,7 +72,13 @@ def main(args):
 
     # Resume from checkpoint if this is desired
     if args.resume_evaluate_model: #load checkpoint which was aborted from
-        model, optimiser, scheduler, start_epoch = load_checkpoint(model, optimiser, scheduler, args.resume_evaluate_model, device)
+        if args.multi_gpu: #manage duplicate prints
+            if rank == 0:
+                model, optimiser, scheduler, start_epoch = load_checkpoint(model, optimiser, scheduler, args.resume_evaluate_model, device, verbose=True)
+            else:
+                model, optimiser, scheduler, start_epoch = load_checkpoint(model, optimiser, scheduler, args.resume_evaluate_model, device, verbose=False)
+        else:
+            model, optimiser, scheduler, start_epoch = load_checkpoint(model, optimiser, scheduler, args.resume_evaluate_model, device, verbose=True)
     else: #default values: anything non-randomised
         start_epoch = 0
 
@@ -91,7 +97,7 @@ def main(args):
     # Evals are always printed no matter what
     if args.checkpoint:
         if args.multi_gpu:
-            if rank==0:
+            if rank == 0:
                 set_up_savedir(args)
                 logger = SummaryWriter(args.checkpoint, filename_suffix=".log")
         else:
@@ -142,7 +148,7 @@ def main(args):
             train_loss, train_acc = evaluate(epoch, trainloader, trainsampler, model, loss_fcn, device, args)
             val_loss, val_acc = evaluate(epoch, valloader, valsampler, model, loss_fcn, device, args)
             if args.multi_gpu:
-                if rank==0:
+                if rank == 0:
                     do_logging(logger, epoch, train_loss, train_acc, "Train", args.topk)
                     do_logging(logger, epoch, val_loss, val_acc, "Val", args.topk)
             else:
@@ -152,7 +158,7 @@ def main(args):
             # Checkpoint if desired
             if args.checkpoint:
                 if args.multi_gpu:
-                    if rank==0:
+                    if rank == 0:
                         save_checkpoint(epoch, model, optimiser, scheduler, args)
                 else:
                     save_checkpoint(epoch, model, optimiser, scheduler, args)
@@ -177,7 +183,7 @@ def main(args):
         print(f"=============================================\nTesting\n=============================================")
     test_loss, test_acc = evaluate(args.epochs, testloader, testsampler, model, loss_fcn, device, args)
     if args.multi_gpu:
-        if rank==0:
+        if rank == 0:
             do_logging(logger, args.epochs, test_loss, test_acc, "Test", args.topk)
     else:
         do_logging(logger, args.epochs, test_loss, test_acc, "Test", args.topk)
@@ -185,14 +191,14 @@ def main(args):
     # Save if desired
     if args.checkpoint:
         if args.multi_gpu:
-            if rank==0:
+            if rank == 0:
                 save_model(model, args)
         else:
             save_model(model, args)
 
     # Close the logger
     if args.multi_gpu:
-        if rank==0:
+        if rank == 0:
             if logger:
                 logger.close()
     else:

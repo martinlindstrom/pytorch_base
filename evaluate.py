@@ -66,7 +66,13 @@ def main(args):
 
     # Load model to evaluate
     if args.resume_evaluate_model: #load checkpoint which was aborted from
-        model = load_model(model, args.resume_evaluate_model, device)
+        if args.multi_gpu: #manage duplicate prints
+            if rank == 0:
+                model = load_model(model, args.resume_evaluate_model, device, verbose=True)
+            else:
+                model = load_model(model, args.resume_evaluate_model, device, verbose=False)
+        else:
+            model = load_model(model, args.resume_evaluate_model, device, verbose=True)
     else: # Throw error: this is the only purpose of this script
         raise ValueError(f"Did not get model to evaluate.")
     
@@ -97,7 +103,7 @@ def main(args):
     # Print
     logger = None
     if args.multi_gpu:
-        if rank==0:
+        if rank == 0:
             eval_time = datetime.now()-eval_start_time
             print(str(eval_time).split(".")[0], "s")
             do_logging(logger, args.epochs, test_loss, test_acc, "Test", args.topk)
