@@ -48,6 +48,10 @@ The default behaviour is to train vision nets for classification with cross-entr
 
 To see all run options, run ``main.py`` with the ``--help`` flag, or check the source code in ``parse_arguments()`` in ``utils.py``.
 
+## Requirements
+
+This code is tested with ``torch==2.4.0`` and ``torchvision==0.19.0``. If you intend to use GPUs, make sure to download the appropriate CUDA-compatible version of torch. Importantly, the code uses the new ``torchvision.transforms.v2`` data augmentations, which were introdced in torchvision 0.15. The code requires (but does not use) ``NumPy`` and ``matplotlib`` since most projects will require these in some capacity. Other dependencies include some standard library packages, as well as ``tensorboard``. 
+
 ## Why Choose This Over ``PyTorch-Lightning``?
 
 I know very little about ``Lightning``, but to my understanding, this repository would have a similar function as a basic ``Lightning`` script. If you feel more comfortable with that, go ahead. 
