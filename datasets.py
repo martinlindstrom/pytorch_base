@@ -99,7 +99,7 @@ def get_CIFAR10(args, testset_only, valsplit=0.1):
     if testset_only:
         # Return only the restset 
         test_dataset = datasets.CIFAR10(args.data_path, train=False, download=False, transform=test_augmentations)
-        None, None, test_dataset
+        return None, None, test_dataset
     else:
         # Return everything
         train_dataset = datasets.CIFAR10(args.data_path, train=True, download=False, transform=None) #IMPORTANT; add different transforms to train/val later
