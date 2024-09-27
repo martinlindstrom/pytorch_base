@@ -87,23 +87,27 @@ For single-GPU OR CPU-only operations, run with the usual 'python3' command.\n==
     return parser.parse_args()
 
 def set_up_savedir(args):
-    # Only allow to re-use a savedir if resuming
+    # Only allow to re-use a savedir if resuming OR the directory is empty save for an .sh file
     # Try to create the directory
-    # If problematic, then only allow it if resuming from a checkpoint
+    # If problematic, then only allow it if resuming from a checkpoint OR only an .sh file is there
     try: #attempting creation
         os.mkdir(args.checkpoint)
         print(f"Created checkpoint directory '{os.path.abspath(args.checkpoint)}'")
     except FileExistsError as e: #if dir exists
-        if args.resume: #check that we are resuming a checkpoint in the checkpoint directory, to avoid accidental overwrite
+        if args.resume_evaluate_model: #check if we are resuming a checkpoint in the checkpoint directory, to avoid accidental overwrite
             dir_path = os.path.abspath(args.checkpoint)
-            ckpt_path = os.path.abspath(args.resume)
+            ckpt_path = os.path.abspath(args.resume_evaluate_model)
             if os.path.dirname(ckpt_path) == dir_path:
                 print(f"Reusing checkpoint directory '{dir_path}'")
             else: #suppress FileExistError, below is the true cause
                 raise RuntimeError(f"Cannot resume '{ckpt_path}' using the checkpoint directory '{dir_path}' since the desired checkpoint is not in the specified checkpoint directory.") from None
-        else: #problem
-            print(f"===Tried creating '{os.path.abspath(args.checkpoint)}' but failed. Does it already exist?===")
-            raise e
+        else: #not resuming: only ok if the only file in the checkpoint dir is a saved .sh file
+            files_in_dir = os.listdir(args.checkpoint)
+            if len(files_in_dir)==1 and os.path.splitext(files_in_dir[0])[1]=='.sh': #Only one file, and this is a .sh file
+                print(f"Using checkpoint directory '{os.path.abspath(args.checkpoint)}'")
+            else: #illegal reuse
+                print(f"===Tried creating '{os.path.abspath(args.checkpoint)}' but failed. Is this already a checkpoint directory?===")
+                raise e
 
 def do_logging(logger, epoch, loss, accs, split, topk):
     # Print loss/accs in a nice format
