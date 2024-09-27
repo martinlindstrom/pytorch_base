@@ -6,6 +6,19 @@ from torchvision.transforms import v2
 
 # Other imports
 
+class DummyDataset(torch.utils.data.Dataset):
+    def __init__(self, sample_shape, num_samples):
+        self.sample_shape = sample_shape
+        self.num_samples = num_samples
+        self.inputs = torch.randn((num_samples, *sample_shape))
+        self.labels = torch.randint(10, size=(num_samples,))
+
+    def __len__(self):
+        return self.num_samples
+    
+    def __getitem__(self, index):
+        return self.inputs[index], self.labels[index]
+
 class SubsetWithTransform(Dataset):
     def __init__(self, subset, transform):
         self.subset = subset
@@ -17,6 +30,12 @@ class SubsetWithTransform(Dataset):
     
     def __len__(self):
         return len(self.subset)
+
+def get_dummy_dataset(testset_only, sample_shape=(20,), split_sizes=(5000,1000,1000)):
+    if testset_only:
+        return None, None, DummyDataset(sample_shape, split_sizes[2])
+    else:
+        return DummyDataset(sample_shape, split_sizes[0]), DummyDataset(sample_shape, split_sizes[1]), DummyDataset(sample_shape, split_sizes[2])
 
 def get_train_val_splits(full_dataset, val_split, train_transform, val_transform):
     """

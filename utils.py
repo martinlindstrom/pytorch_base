@@ -17,19 +17,8 @@ import os
 
 # Project imports
 from models import SmallNetwork, ResNet18, ResNet34, ResNet50
-from datasets import get_MNIST, get_CIFAR10, get_CIFAR100, get_imagenet
+from datasets import get_MNIST, get_CIFAR10, get_CIFAR100, get_imagenet, get_dummy_dataset
 
-class DummyDataset(torch.utils.data.Dataset):
-    def __init__(self, size):
-        self.size = size
-        self.inputs = torch.randn(size, 20)
-        self.labels = torch.randint(10, size=(size,))
-
-    def __len__(self):
-        return self.size
-    
-    def __getitem__(self, index):
-        return self.inputs[index], self.labels[index]
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="=============================================\nPyTorch Training\n\nThis programme is compatible with both single-node multi-GPU, single-GPU, and CPU-only operation.\n\n\
@@ -130,7 +119,7 @@ def do_logging(logger, epoch, loss, accs, split, topk):
 
 def get_dataset(args, testset_only=False):
     if args.dataset == "dummy":
-        return DummyDataset(size = 5000), DummyDataset(size = 1000), DummyDataset(size = 1000)
+        return get_dummy_dataset(testset_only)
     elif args.dataset == "mnist":
         return get_MNIST(args, testset_only, valsplit=0.1)
     elif args.dataset == "cifar10":
